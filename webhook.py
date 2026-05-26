@@ -12,6 +12,7 @@ from flask import Flask, request, jsonify
 from agent.graph import run_ticket
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route("/webhook/ticket", methods=["POST"])
 def receive_ticket():
