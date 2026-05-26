@@ -1,11 +1,11 @@
 from dotenv import load_dotenv
 load_dotenv()
 
-from langchain_openai import ChatOpenAI
+from langchain_anthropic import ChatAnthropic
 from langchain_core.prompts import ChatPromptTemplate
 from rag.retriever import get_retriever
 
-llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
+llm = ChatAnthropic(model="claude-sonnet-4-6", temperature=0)
 
 GENERAL_PROMPT = """You are a general support specialist for NovaPay, a payments platform.
 
