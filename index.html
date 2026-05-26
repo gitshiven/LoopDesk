@@ -39,34 +39,56 @@ body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-in
 /* ── INTRO SCREEN ── */
 #intro {
   position: fixed; inset: 0; z-index: 500;
-  background: #000;
-  display: flex; align-items: center; justify-content: center;
+  background: #0a0a0a;
+  display: flex; flex-direction: column;
+  align-items: flex-start; justify-content: center;
+  padding: 60px 48px;
   transition: opacity 1.2s ease;
 }
 #intro.fade-out { opacity: 0; pointer-events: none; }
-
-#video-circle {
-  width: min(70vw, 70vh);
-  height: min(70vw, 70vh);
-  border-radius: 50%;
-  overflow: hidden;
-  position: relative;
+.hero-line { display: block; overflow: hidden; line-height: 0.95; }
+.hero-line span {
+  display: inline-block;
+  transform: translateY(110%); opacity: 0;
+  transition: transform 0.55s cubic-bezier(0.16,1,0.3,1), opacity 0.55s ease;
+  font-size: clamp(3.5rem, 10vw, 7.5rem);
+  font-weight: 700; letter-spacing: -0.03em;
+  text-transform: uppercase; color: #f2efe8; padding-bottom: 4px;
 }
-
-#intro-video {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.hero-line span.show { transform: translateY(0); opacity: 1; }
+.line-loop span { color: transparent; -webkit-text-stroke: 2px #ff3c00; font-style: italic; }
+.line-loop span.show.filled { color: #ff3c00; -webkit-text-stroke: 0; }
+#intro-cursor {
+  display: inline-block; width: 4px; height: 0.75em;
+  background: #ff3c00; margin-left: 3px; vertical-align: middle; opacity: 0;
 }
+#intro-cursor.show { opacity: 1; animation: introBlink 0.9s step-end infinite; }
+@keyframes introBlink { 0%,100%{opacity:1} 50%{opacity:0} }
+#intro-divider {
+  width: 0; height: 1px; background: #2a2a2a;
+  margin: 32px 0 0; transition: width 1.2s cubic-bezier(0.16,1,0.3,1);
+}
+#intro-divider.show { width: 100%; }
+#intro-logo {
+  display: flex; align-items: center; margin-top: 28px;
+  opacity: 0; transform: translateY(12px);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+#intro-logo.show { opacity: 1; transform: translateY(0); }
+#intro-logo img { height: 56px; width: auto; display: block; }
+#intro-tagline {
+  font-size: 0.65rem; letter-spacing: 0.22em; text-transform: uppercase;
+  color: #333; margin-top: 12px; opacity: 0; transition: opacity 0.8s ease;
+}
+#intro-tagline.show { opacity: 1; }
 .skip-btn {
   position: absolute; bottom: 32px; right: 32px;
   font-family: 'Ubuntu', sans-serif;
   font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase;
-  color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.15);
-  background: transparent; padding: 8px 16px; cursor: none;
-  transition: all 0.2s;
+  color: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.1);
+  background: transparent; padding: 8px 16px; cursor: none; transition: all 0.2s;
 }
-.skip-btn:hover { color: var(--white); border-color: var(--white); }
+.skip-btn:hover { color: #f2efe8; border-color: #f2efe8; }
 
 /* ── MAIN CONTENT ── */
 #main { opacity: 0; transition: opacity 1s ease 0.3s; }
@@ -286,13 +308,16 @@ footer { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: var(--ru
 <div class="cur" id="curDot"><div class="cur-dot"></div></div>
 <div class="cur" id="curCross"><div class="cur-cross"></div></div>
 
-<!-- INTRO VIDEO -->
+<!-- INTRO -->
 <div id="intro">
-  <div id="video-circle">
-    <video id="intro-video" autoplay muted playsinline>
-      <source src="static/hero.mp4" type="video/mp4"/>
-    </video>
+  <div class="hero-line"><span id="w-close">Close</span></div>
+  <div class="hero-line"><span id="w-the">The</span></div>
+  <div class="hero-line line-loop"><span id="w-loop">Loop.<span id="intro-cursor"></span></span></div>
+  <div id="intro-divider"></div>
+  <div id="intro-logo">
+    <img src="static/logo.png" alt="LoopDesk"/>
   </div>
+  <div id="intro-tagline">Resolving tickets, intelligently.</div>
   <button class="skip-btn" onclick="skipIntro()">Skip →</button>
 </div>
 
@@ -575,21 +600,50 @@ let tickets = [], ticketCount = 0;
 // ── INTRO ──
 const introEl = document.getElementById('intro');
 const mainEl  = document.getElementById('main');
-const video   = document.getElementById('intro-video');
 
 function revealMain() {
   introEl.classList.add('fade-out');
   mainEl.classList.add('show');
   setTimeout(() => introEl.style.display = 'none', 1400);
-  // start terminal after reveal
   document.querySelectorAll('.tl').forEach((l,i) => setTimeout(()=>l.classList.add('on'), 400+i*280));
 }
 
-video.addEventListener('ended', revealMain);
-// fallback — if video fails or takes too long
-setTimeout(revealMain, 8000);
+function skipIntro() { revealMain(); }
 
-function skipIntro() { video.pause(); revealMain(); }
+async function runIntro() {
+  const wClose  = document.getElementById('w-close');
+  const wThe    = document.getElementById('w-the');
+  const wLoop   = document.getElementById('w-loop');
+  const cursor  = document.getElementById('intro-cursor');
+  const divider = document.getElementById('intro-divider');
+  const logo    = document.getElementById('intro-logo');
+  const tag     = document.getElementById('intro-tagline');
+
+  const d = ms => new Promise(r => setTimeout(r, ms));
+
+  await d(400);
+  wClose.classList.add('show');
+  await d(200);
+  wThe.classList.add('show');
+  await d(200);
+  wLoop.classList.add('show');
+  cursor.classList.add('show');
+  await d(700);
+  wLoop.classList.add('filled');
+  await d(400);
+  cursor.style.animation = 'none';
+  cursor.style.opacity = '0';
+  await d(200);
+  divider.classList.add('show');
+  await d(400);
+  logo.classList.add('show');
+  await d(200);
+  tag.classList.add('show');
+  await d(1200);
+  revealMain();
+}
+
+runIntro();
 
 // ── CURSOR ──
 const dot = document.getElementById('curDot');
