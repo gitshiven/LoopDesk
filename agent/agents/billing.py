@@ -1,3 +1,4 @@
+import re
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -8,7 +9,6 @@ from rag.retriever import get_retriever
 llm = ChatAnthropic(model="claude-sonnet-4-6", temperature=0)
 
 BILLING_PROMPT = """You are a billing support specialist for NovaPay, a payments platform.
-
 Use the following context from our billing documentation to answer the customer's question.
 Be concise, helpful, and professional. If you cannot find a clear answer in the context, say so honestly.
 
@@ -32,8 +32,13 @@ def billing_agent(message: str) -> dict:
         "message": message
     })
 
+    response = result.content
+    response = re.sub(r'\*\*(.*?)\*\*', r'\1', response)
+    response = re.sub(r'\*(.*?)\*', r'\1', response)
+    response = re.sub(r'^[-•]\s+', '', response, flags=re.MULTILINE)
+
     return {
-        "response": result.content,
+        "response": response,
         "context_used": context,
         "agent": "billing"
     }

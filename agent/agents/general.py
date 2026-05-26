@@ -32,6 +32,11 @@ def general_agent(message: str) -> dict:
         "message": message
     })
 
+    response = result.content
+    response = re.sub(r'\*\*(.*?)\*\*', r'\1', response)
+    response = re.sub(r'\*(.*?)\*', r'\1', response)
+    response = re.sub(r'^[-•]\s+', '', response, flags=re.MULTILINE)
+
     return {
         "response": result.content,
         "context_used": context,
