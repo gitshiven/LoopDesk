@@ -2,6 +2,12 @@ import os
 from dotenv import load_dotenv
 load_dotenv()
 
+# Build vector store if it doesn't exist
+if not os.path.exists("chroma_db"):
+    print("Building vector store...")
+    from rag.retriever import build_vectorstore
+    build_vectorstore()
+
 from flask import Flask, request, jsonify
 from agent.graph import run_ticket
 
@@ -10,7 +16,6 @@ app = Flask(__name__)
 @app.route("/webhook/ticket", methods=["POST"])
 def receive_ticket():
     data = request.get_json()
-
     if not data or "message" not in data:
         return jsonify({"error": "No message provided"}), 400
 
