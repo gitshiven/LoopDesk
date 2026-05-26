@@ -1,0 +1,692 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>LoopDesk — Resolving Tickets, Intelligently</title>
+<link href="https://fonts.googleapis.com/css2?family=Ubuntu:ital,wght@0,300;0,400;0,500;0,700;1,300;1,400&display=swap" rel="stylesheet"/>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --black: #0a0a0a;
+  --white: #f2efe8;
+  --accent: #ff3c00;
+  --accent2: #0057ff;
+  --mid: #1a1a1a;
+  --border: #2a2a2a;
+  --muted: #666;
+  --rule: 1px solid #2a2a2a;
+}
+
+html { scroll-behavior: smooth; }
+body { background: var(--black); color: var(--white); font-family: 'Ubuntu', sans-serif; font-weight: 300; overflow-x: hidden; cursor: none; }
+
+/* CURSOR */
+.cur { position: fixed; pointer-events: none; z-index: 9999; mix-blend-mode: difference; }
+.cur-dot { width: 8px; height: 8px; background: var(--white); border-radius: 50%; transform: translate(-50%,-50%); }
+.cur-cross { width: 32px; height: 32px; transform: translate(-50%,-50%); }
+.cur-cross::before, .cur-cross::after { content: ''; position: absolute; background: var(--white); }
+.cur-cross::before { width: 1px; height: 100%; left: 50%; top: 0; }
+.cur-cross::after { width: 100%; height: 1px; top: 50%; left: 0; }
+
+/* GRAIN */
+body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-index: 998; opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E"); }
+
+/* ── INTRO SCREEN ── */
+#intro {
+  position: fixed; inset: 0; z-index: 500;
+  background: #000;
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 1.2s ease;
+}
+#intro.fade-out { opacity: 0; pointer-events: none; }
+#intro-video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+}
+.skip-btn {
+  position: absolute; bottom: 32px; right: 32px;
+  font-family: 'Ubuntu', sans-serif;
+  font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase;
+  color: rgba(255,255,255,0.3); border: 1px solid rgba(255,255,255,0.15);
+  background: transparent; padding: 8px 16px; cursor: none;
+  transition: all 0.2s;
+}
+.skip-btn:hover { color: var(--white); border-color: var(--white); }
+
+/* ── MAIN CONTENT ── */
+#main { opacity: 0; transition: opacity 1s ease 0.3s; }
+#main.show { opacity: 1; }
+
+/* NAV */
+nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; padding: 0 32px; height: 56px; border-bottom: var(--rule); background: var(--black); }
+.nav-left { display: flex; align-items: center; gap: 24px; }
+.nav-logo { font-size: 1rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; display: flex; align-items: center; gap: 10px; }
+.logo-mark { width: 26px; height: 26px; border: 2px solid var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--accent); font-weight: 700; animation: spinLoop 6s linear infinite; }
+@keyframes spinLoop { 0%{transform:rotate(0deg)} 100%{transform:rotate(360deg)} }
+.nav-tag { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; border: 1px solid var(--border); color: var(--muted); padding: 3px 7px; }
+.nav-center { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); text-align: center; }
+.nav-right { display: flex; justify-content: flex-end; }
+.nav-btn { font-family: 'Ubuntu', sans-serif; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; background: var(--accent); color: var(--white); border: none; padding: 8px 18px; cursor: none; transition: background 0.15s; }
+.nav-btn:hover { background: #e63500; }
+
+/* HERO */
+.hero { min-height: 100vh; padding: 56px 0 0; display: grid; grid-template-rows: 1fr auto; border-bottom: var(--rule); }
+.hero-main { display: grid; grid-template-columns: 1fr 1fr; border-bottom: var(--rule); }
+.hero-left { padding: 64px 48px 64px 32px; border-right: var(--rule); display: flex; flex-direction: column; justify-content: space-between; }
+.hero-issue-num { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-bottom: 48px; display: flex; align-items: center; gap: 12px; }
+.hero-issue-num::before { content: ''; display: block; width: 32px; height: 1px; background: var(--muted); }
+.hero-h1 { font-size: clamp(3.5rem, 8vw, 7.5rem); font-weight: 700; line-height: 0.92; letter-spacing: -0.03em; text-transform: uppercase; }
+.hero-h1 em { font-style: italic; font-weight: 300; color: var(--accent); }
+.hero-bottom-left { display: flex; align-items: flex-end; justify-content: space-between; margin-top: 48px; }
+.hero-sub { font-size: 0.82rem; line-height: 1.7; color: var(--muted); max-width: 320px; font-weight: 300; }
+.hero-cta-group { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+.btn-brutal { font-family: 'Ubuntu', sans-serif; font-size: 0.7rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 12px 24px; cursor: none; border: 1px solid var(--white); background: transparent; color: var(--white); transition: all 0.15s; white-space: nowrap; }
+.btn-brutal:hover { background: var(--white); color: var(--black); }
+.btn-brutal.filled { background: var(--accent); border-color: var(--accent); color: var(--white); }
+.btn-brutal.filled:hover { background: #e63500; border-color: #e63500; }
+.hero-right { padding: 64px 32px 64px 48px; display: flex; flex-direction: column; justify-content: space-between; position: relative; }
+.hero-index { font-size: 0.6rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+.hero-bignum { font-size: clamp(8rem, 18vw, 16rem); font-weight: 700; line-height: 1; color: transparent; -webkit-text-stroke: 1px var(--border); position: absolute; right: -20px; bottom: 40px; letter-spacing: -0.05em; pointer-events: none; user-select: none; }
+
+/* TERMINAL */
+.terminal-card { background: var(--mid); border: var(--rule); margin-top: 32px; }
+.tc-header { padding: 10px 16px; border-bottom: var(--rule); display: flex; align-items: center; justify-content: space-between; }
+.tc-title { font-size: 0.62rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.tc-status { font-size: 0.58rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); display: flex; align-items: center; gap: 6px; }
+.status-dot { width: 5px; height: 5px; background: var(--accent); border-radius: 50%; animation: blink 1.2s step-end infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+.tc-body { padding: 16px; font-size: 0.72rem; line-height: 1.9; }
+.tl { opacity: 0; transition: opacity 0.2s; }
+.tl.on { opacity: 1; }
+.c-sys{color:var(--muted)} .c-usr{color:var(--accent);font-weight:500} .c-agt{color:var(--accent2)}
+.c-ok{color:#34d399;font-weight:500} .c-warn{color:#fbbf24} .c-txt{color:var(--white)}
+.cur-blink { display:inline-block; width:7px; height:13px; background:var(--white); animation:blink 1s step-end infinite; vertical-align:middle; }
+
+/* HERO STRIP */
+.hero-strip { display: grid; grid-template-columns: repeat(4, 1fr); }
+.strip-item { padding: 20px 24px; border-right: var(--rule); display: flex; flex-direction: column; gap: 4px; }
+.strip-item:last-child { border-right: none; }
+.strip-num { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; color: var(--accent); }
+.strip-label { font-size: 0.62rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+/* MARQUEE */
+.marquee-wrap { overflow: hidden; border-top: var(--rule); border-bottom: var(--rule); padding: 14px 0; background: var(--mid); }
+.marquee { display: flex; animation: marquee 18s linear infinite; width: max-content; }
+.mq-item { display: flex; align-items: center; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+.mq-sep { display: inline-block; width: 6px; height: 6px; background: var(--accent); border-radius: 50%; margin: 0 28px; }
+@keyframes marquee { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+
+/* SECTIONS */
+.section { border-bottom: var(--rule); opacity: 0; transform: translateY(28px); transition: opacity 0.65s ease, transform 0.65s ease; }
+.section.vis { opacity: 1; transform: translateY(0); }
+.section-header { display: grid; grid-template-columns: 200px 1fr; border-bottom: var(--rule); }
+.sec-label { padding: 20px 24px; font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); border-right: var(--rule); display: flex; align-items: center; }
+.sec-title-wrap { padding: 20px 32px; }
+.sec-title { font-size: clamp(1.6rem, 3.5vw, 2.8rem); font-weight: 700; letter-spacing: -0.02em; text-transform: uppercase; line-height: 1.1; }
+.sec-title span { color: var(--accent); font-style: italic; font-weight: 300; }
+
+/* HOW IT WORKS */
+.how-grid { display: grid; grid-template-columns: repeat(3, 1fr); }
+.how-card { padding: 40px 32px; border-right: var(--rule); position: relative; overflow: hidden; }
+.how-card:last-child { border-right: none; }
+.how-card::before { content: attr(data-n); position: absolute; top: -10px; right: 16px; font-size: 5rem; font-weight: 700; color: transparent; -webkit-text-stroke: 1px var(--border); line-height: 1; pointer-events: none; transition: opacity 0.3s; }
+.how-card:hover::before { -webkit-text-stroke-color: var(--accent); opacity: 0.3; }
+.how-icon { font-size: 1.8rem; margin-bottom: 20px; display: block; }
+.how-title { font-size: 1rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 12px; }
+.how-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.7; }
+.how-tag { display: inline-block; margin-top: 16px; font-size: 0.58rem; letter-spacing: 0.12em; text-transform: uppercase; border: 1px solid var(--border); color: var(--muted); padding: 4px 8px; }
+.how-tag.active { border-color: var(--accent); color: var(--accent); }
+
+/* BENTO */
+.bento { display: grid; grid-template-columns: repeat(6, 1fr); }
+.bento-cell { border-right: var(--rule); border-bottom: var(--rule); padding: 36px 28px; position: relative; overflow: hidden; transition: background 0.2s; }
+.bento-cell:hover { background: var(--mid); }
+.bento-cell:nth-child(6n) { border-right: none; }
+.bento-cell.span2 { grid-column: span 2; } .bento-cell.span3 { grid-column: span 3; }
+.bento-num { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
+.bento-icon { font-size: 1.5rem; margin-bottom: 14px; }
+.bento-title { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px; }
+.bento-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.65; }
+.bento-accent-line { position: absolute; bottom: 0; left: 0; height: 2px; width: 0; background: var(--accent); transition: width 0.4s ease; }
+.bento-cell:hover .bento-accent-line { width: 100%; }
+
+/* LOOP DIAGRAM */
+.loop-section { display: grid; grid-template-columns: 1fr 1fr; min-height: 420px; }
+.loop-left { padding: 56px 48px; border-right: var(--rule); display: flex; flex-direction: column; justify-content: center; }
+.loop-right { padding: 56px 48px; display: flex; align-items: center; justify-content: center; }
+.loop-diagram { position: relative; width: 280px; height: 280px; }
+.loop-ring { position: absolute; inset: 0; border: 1px solid var(--border); border-radius: 50%; animation: ringPulse 4s ease-in-out infinite; }
+.loop-ring:nth-child(2) { inset: 30px; animation-delay: 0.5s; border-color: var(--accent); opacity: 0.3; }
+.loop-ring:nth-child(3) { inset: 60px; animation-delay: 1s; }
+@keyframes ringPulse { 0%,100%{opacity:0.3} 50%{opacity:0.8} }
+.loop-nodes { position: absolute; inset: 0; animation: rotateSlow 12s linear infinite; }
+.loop-node { position: absolute; width: 52px; height: 52px; background: var(--mid); border: var(--rule); display: flex; align-items: center; justify-content: center; font-size: 1.1rem; transform: translate(-50%,-50%); }
+.loop-node:nth-child(1){top:8%;left:50%;border-color:var(--accent)} .loop-node:nth-child(2){top:50%;left:92%} .loop-node:nth-child(3){top:92%;left:50%;border-color:var(--accent2)} .loop-node:nth-child(4){top:50%;left:8%}
+.loop-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 72px; height: 72px; background: var(--accent); display: flex; align-items: center; justify-content: center; font-size: 1.6rem; }
+@keyframes rotateSlow { from{transform:rotate(0)} to{transform:rotate(360deg)} }
+.loop-desc { font-size: 0.78rem; color: var(--muted); line-height: 1.7; margin-top: 16px; }
+.loop-step { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 16px; }
+.loop-step-num { min-width: 24px; height: 24px; border: 1px solid var(--accent); color: var(--accent); font-size: 0.6rem; font-weight: 700; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.loop-step-text { font-size: 0.78rem; color: var(--muted); line-height: 1.6; padding-top: 2px; }
+
+/* STACK */
+.stack-strip { display: grid; grid-template-columns: repeat(6, 1fr); border-bottom: var(--rule); }
+.stack-item { padding: 28px 24px; border-right: var(--rule); text-align: center; transition: background 0.2s; }
+.stack-item:hover { background: var(--mid); }
+.stack-item:last-child { border-right: none; }
+.stack-name { font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+.stack-role { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+
+/* QUOTE */
+.quote-section { padding: 80px 32px; display: grid; grid-template-columns: 200px 1fr; border-bottom: var(--rule); }
+.quote-side { border-right: var(--rule); padding-right: 32px; display: flex; align-items: flex-start; padding-top: 8px; }
+.quote-mark { font-size: 6rem; line-height: 1; color: var(--accent); font-weight: 700; }
+.quote-body { padding-left: 48px; }
+.quote-text { font-size: clamp(1.4rem, 3vw, 2.2rem); font-weight: 300; font-style: italic; line-height: 1.35; letter-spacing: -0.01em; margin-bottom: 24px; }
+.quote-text strong { font-weight: 700; font-style: normal; color: var(--accent); }
+.quote-attr { font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+
+/* CTA */
+.cta-section { display: grid; grid-template-columns: 1fr 1fr; min-height: 320px; border-bottom: var(--rule); }
+.cta-left { padding: 64px 48px; border-right: var(--rule); display: flex; flex-direction: column; justify-content: space-between; }
+.cta-h2 { font-size: clamp(2rem, 5vw, 4rem); font-weight: 700; text-transform: uppercase; letter-spacing: -0.02em; line-height: 1; }
+.cta-h2 span { color: var(--accent); }
+.cta-right { padding: 64px 48px; display: flex; flex-direction: column; justify-content: center; gap: 16px; }
+.cta-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.7; margin-bottom: 8px; }
+
+/* FOOTER */
+footer { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: var(--rule); }
+.footer-cell { padding: 24px 28px; border-right: var(--rule); font-size: 0.65rem; color: var(--muted); letter-spacing: 0.06em; }
+.footer-cell:last-child { border-right: none; text-align: right; }
+.footer-logo { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; color: var(--white); letter-spacing: 0.08em; margin-bottom: 4px; }
+
+/* DEMO SECTION */
+.demo-banner { border-bottom: var(--rule); padding: 20px 32px; background: #0f0600; border-left: 3px solid var(--accent); }
+.demo-banner-label { font-size: 0.58rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--accent); margin-bottom: 6px; }
+.demo-banner-text { font-size: 0.8rem; color: var(--white); line-height: 1.6; }
+.demo-banner-text strong { color: var(--accent); }
+.demo-banner-sub { font-size: 0.72rem; color: var(--muted); margin-top: 6px; line-height: 1.6; }
+.demo-banner-sub strong { color: var(--white); }
+.demo-layout { display: grid; grid-template-columns: 1fr 1fr; min-height: 600px; }
+.demo-left { padding: 48px 40px; border-right: var(--rule); display: flex; flex-direction: column; }
+.demo-right { padding: 48px 40px; display: flex; flex-direction: column; background: #0d0d0d; }
+.demo-field-label { font-size: 0.6rem; letter-spacing: 0.18em; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+.demo-textarea { width: 100%; background: var(--black); border: var(--rule); color: var(--white); font-family: 'Ubuntu', sans-serif; font-size: 0.82rem; font-weight: 300; padding: 14px 16px; resize: none; height: 120px; outline: none; transition: border-color 0.2s; line-height: 1.6; }
+.demo-textarea:focus { border-color: var(--accent); }
+.demo-textarea::placeholder { color: var(--muted); }
+.demo-submit { font-family: 'Ubuntu', sans-serif; font-size: 0.7rem; letter-spacing: 0.15em; text-transform: uppercase; background: var(--accent); color: var(--white); border: none; padding: 14px 28px; cursor: none; transition: background 0.15s; align-self: flex-start; margin-top: 16px; display: flex; align-items: center; gap: 10px; }
+.demo-submit:hover { background: #e63500; }
+.demo-submit:disabled { background: var(--border); }
+.demo-examples { margin-top: 28px; border-top: var(--rule); padding-top: 20px; }
+.demo-examples-label { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; }
+.demo-example-chip { display: inline-block; font-size: 0.68rem; color: var(--muted); border: 1px solid var(--border); padding: 5px 10px; margin: 4px 4px 0 0; cursor: none; transition: all 0.15s; }
+.demo-example-chip:hover { border-color: var(--accent); color: var(--accent); }
+.demo-result-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; color: var(--muted); text-align: center; gap: 12px; }
+.demo-result-empty-icon { font-size: 2rem; opacity: 0.3; }
+.demo-result-empty-text { font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; }
+.demo-result { display: none; flex-direction: column; }
+.demo-result.show { display: flex; }
+.result-row { display: grid; grid-template-columns: 140px 1fr; border-bottom: var(--rule); }
+.result-row:last-child { border-bottom: none; }
+.result-key { padding: 14px 16px; font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); border-right: var(--rule); display: flex; align-items: flex-start; padding-top: 16px; }
+.result-val { padding: 14px 16px; font-size: 0.78rem; line-height: 1.65; color: var(--white); }
+.result-val.category { font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; }
+.result-val.billing { color: #fbbf24; } .result-val.technical { color: var(--accent2); } .result-val.general { color: #34d399; }
+.result-val.escalated-val { color: var(--accent); font-weight: 700; } .result-val.resolved-val { color: #34d399; font-weight: 700; }
+.confidence-bar-wrap { margin-top: 6px; }
+.confidence-bar-bg { width: 100%; height: 3px; background: var(--border); }
+.confidence-bar-fill { height: 3px; background: var(--accent); transition: width 0.8s ease; width: 0%; }
+.demo-tabs { display: flex; border-bottom: var(--rule); }
+.demo-tab { font-family: 'Ubuntu', sans-serif; font-size: 0.65rem; letter-spacing: 0.15em; text-transform: uppercase; padding: 14px 24px; cursor: none; border: none; background: transparent; color: var(--muted); border-bottom: 2px solid transparent; transition: all 0.15s; }
+.demo-tab.active { color: var(--white); border-bottom-color: var(--accent); }
+.tab-panel { display: none; flex: 1; flex-direction: column; }
+.tab-panel.active { display: flex; }
+.reviewer-empty { display: flex; flex-direction: column; align-items: center; justify-content: center; flex: 1; color: var(--muted); text-align: center; gap: 12px; padding: 40px; }
+.ticket-review-card { border-bottom: var(--rule); padding: 20px; }
+.trc-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+.trc-id { font-size: 0.6rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+.trc-badge { font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 8px; border: 1px solid; }
+.trc-badge.billing{border-color:#fbbf24;color:#fbbf24} .trc-badge.technical{border-color:var(--accent2);color:var(--accent2)} .trc-badge.general{border-color:#34d399;color:#34d399} .trc-badge.escalated{border-color:var(--accent);color:var(--accent)}
+.trc-message { font-size: 0.78rem; color: var(--white); margin-bottom: 8px; font-style: italic; }
+.trc-response { font-size: 0.72rem; color: var(--muted); line-height: 1.6; margin-bottom: 14px; }
+.trc-actions { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.trc-btn { font-family: 'Ubuntu', sans-serif; font-size: 0.6rem; letter-spacing: 0.1em; text-transform: uppercase; padding: 7px 14px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: none; transition: all 0.15s; }
+.trc-btn.correct:hover{border-color:#34d399;color:#34d399} .trc-btn.wrong:hover{border-color:var(--accent);color:var(--accent)}
+.trc-correction-form { margin-top: 12px; display: none; padding: 14px; border: 1px solid var(--border); background: #111; }
+.trc-correction-form.show { display: block; }
+.trc-select { font-family: 'Ubuntu', sans-serif; font-size: 0.72rem; background: var(--black); border: var(--rule); color: var(--white); padding: 8px 12px; width: 100%; margin-bottom: 8px; outline: none; }
+.trc-input { font-family: 'Ubuntu', sans-serif; font-size: 0.72rem; background: var(--black); border: var(--rule); color: var(--white); padding: 8px 12px; width: 100%; margin-bottom: 8px; outline: none; }
+.trc-input::placeholder { color: var(--muted); }
+.trc-save { font-family: 'Ubuntu', sans-serif; font-size: 0.6rem; letter-spacing: 0.12em; text-transform: uppercase; padding: 8px 16px; background: var(--accent); border: none; color: var(--white); cursor: none; transition: background 0.15s; }
+.trc-save:hover { background: #e63500; }
+.spinner { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.2); border-top-color: var(--white); border-radius: 50%; animation: spin 0.7s linear infinite; }
+@keyframes spin { to{transform:rotate(360deg)} }
+.warming-notice { font-size: 0.68rem; color: var(--muted); margin-top: 10px; display: none; line-height: 1.5; }
+.warming-notice.show { display: block; }
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div class="cur" id="curDot"><div class="cur-dot"></div></div>
+<div class="cur" id="curCross"><div class="cur-cross"></div></div>
+
+<!-- INTRO VIDEO -->
+<div id="intro">
+  <video id="intro-video" autoplay muted playsinline>
+    <source src="static/hero.mp4" type="video/mp4"/>
+  </video>
+  <button class="skip-btn" onclick="skipIntro()">Skip →</button>
+</div>
+
+<!-- MAIN CONTENT -->
+<div id="main">
+
+<!-- NAV -->
+<nav>
+  <div class="nav-left">
+    <div class="nav-logo"><div class="logo-mark">↺</div>LoopDesk</div>
+    <span class="nav-tag">Open Source</span>
+  </div>
+  <div class="nav-center">AI Support Triage — v0.1.0</div>
+  <div class="nav-right">
+    <button class="nav-btn" onclick="document.getElementById('demo-section').scrollIntoView({behavior:'smooth'})">Try Demo</button>
+  </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero" style="opacity:1;transform:none;">
+  <div class="hero-main">
+    <div class="hero-left">
+      <div>
+        <div class="hero-issue-num">Issue No. 001 &nbsp;/&nbsp; 2026</div>
+        <h1 class="hero-h1">Close<br/>The<br/><em>Loop.</em></h1>
+      </div>
+      <div class="hero-bottom-left">
+        <p class="hero-sub">An AI triage agent that classifies, routes, and resolves support tickets — then gets smarter every time a human corrects it.</p>
+        <div class="hero-cta-group">
+          <button class="btn-brutal filled" onclick="document.getElementById('demo-section').scrollIntoView({behavior:'smooth'})">Try Live Demo →</button>
+          <button class="btn-brutal" onclick="window.open('https://github.com/gitshiven/LoopDesk','_blank')">View Source</button>
+        </div>
+      </div>
+    </div>
+    <div class="hero-right">
+      <div class="hero-index">System / Active</div>
+      <div class="terminal-card">
+        <div class="tc-header">
+          <span class="tc-title">agent.triage — live</span>
+          <span class="tc-status"><span class="status-dot"></span>Running</span>
+        </div>
+        <div class="tc-body">
+          <div class="tl" id="t0"><span class="c-sys">›</span> <span class="c-txt">LoopDesk v0.1 — RAG loaded (8 chunks)</span></div>
+          <div class="tl" id="t1"><span class="c-sys">›</span> <span class="c-txt">Corrections store: active</span></div>
+          <div class="tl" id="t2">&nbsp;</div>
+          <div class="tl" id="t3"><span class="c-usr">customer</span> <span class="c-txt">"Charged twice this month"</span></div>
+          <div class="tl" id="t4"><span class="c-agt">classifier</span> <span class="c-warn">→ BILLING</span> <span class="c-sys">(conf: 100%)</span></div>
+          <div class="tl" id="t5"><span class="c-agt">billing_agent</span> <span class="c-txt">searching docs... match found</span></div>
+          <div class="tl" id="t6"><span class="c-agt">confidence</span> <span class="c-txt">1.0 > 0.75</span> <span class="c-ok">→ AUTO-RESOLVE</span></div>
+          <div class="tl" id="t7">&nbsp;</div>
+          <div class="tl" id="t8"><span class="c-ok">✓ resolved</span> <span class="c-txt">powered by Claude Sonnet 4.6</span></div>
+          <div class="tl" id="t9"><span class="c-sys">$</span> <span class="cur-blink"></span></div>
+        </div>
+      </div>
+      <div class="hero-bignum">01</div>
+    </div>
+  </div>
+  <div class="hero-strip">
+    <div class="strip-item"><div class="strip-num">67→100%</div><div class="strip-label">Accuracy w/ Learning</div></div>
+    <div class="strip-item"><div class="strip-num">2</div><div class="strip-label">Corrections to Fix Errors</div></div>
+    <div class="strip-item"><div class="strip-num">3×</div><div class="strip-label">Agent Types</div></div>
+    <div class="strip-item"><div class="strip-num">0</div><div class="strip-label">Retraining Required</div></div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-wrap">
+  <div class="marquee">
+    <span class="mq-item">Classify<span class="mq-sep"></span></span>
+    <span class="mq-item">Route<span class="mq-sep"></span></span>
+    <span class="mq-item">Resolve<span class="mq-sep"></span></span>
+    <span class="mq-item">Learn<span class="mq-sep"></span></span>
+    <span class="mq-item">LangGraph<span class="mq-sep"></span></span>
+    <span class="mq-item">RAG<span class="mq-sep"></span></span>
+    <span class="mq-item">ChromaDB<span class="mq-sep"></span></span>
+    <span class="mq-item">Claude Sonnet 4.6<span class="mq-sep"></span></span>
+    <span class="mq-item">Auto-Learning<span class="mq-sep"></span></span>
+    <span class="mq-item">Human-in-the-Loop<span class="mq-sep"></span></span>
+    <span class="mq-item">Classify<span class="mq-sep"></span></span>
+    <span class="mq-item">Route<span class="mq-sep"></span></span>
+    <span class="mq-item">Resolve<span class="mq-sep"></span></span>
+    <span class="mq-item">Learn<span class="mq-sep"></span></span>
+    <span class="mq-item">LangGraph<span class="mq-sep"></span></span>
+    <span class="mq-item">RAG<span class="mq-sep"></span></span>
+    <span class="mq-item">ChromaDB<span class="mq-sep"></span></span>
+    <span class="mq-item">Claude Sonnet 4.6<span class="mq-sep"></span></span>
+    <span class="mq-item">Auto-Learning<span class="mq-sep"></span></span>
+    <span class="mq-item">Human-in-the-Loop<span class="mq-sep"></span></span>
+  </div>
+</div>
+
+<!-- HOW IT WORKS -->
+<section class="section">
+  <div class="section-header">
+    <div class="sec-label">§ 01 — How It Works</div>
+    <div class="sec-title-wrap"><h2 class="sec-title">From message<br/>to <span>resolution</span></h2></div>
+  </div>
+  <div class="how-grid">
+    <div class="how-card" data-n="1">
+      <span class="how-icon">📩</span>
+      <div class="how-title">Ticket Arrives</div>
+      <div class="how-desc">Customer submits a support message in plain language. No categories, no forms. Just words.</div>
+      <span class="how-tag active">Input Layer</span>
+    </div>
+    <div class="how-card" data-n="2">
+      <span class="how-icon">🔀</span>
+      <div class="how-title">Classify & Route</div>
+      <div class="how-desc">LangGraph classifier node reads intent, routes to the correct specialist agent — Billing, Technical, or General.</div>
+      <span class="how-tag">LangGraph Node</span>
+    </div>
+    <div class="how-card" data-n="3">
+      <span class="how-icon">✅</span>
+      <div class="how-title">Resolve or Escalate</div>
+      <div class="how-desc">High confidence → answer sent automatically. Low confidence → human gets a pre-written handoff summary.</div>
+      <span class="how-tag">Output Layer</span>
+    </div>
+  </div>
+</section>
+
+<!-- AUTO-LEARNING -->
+<section class="section">
+  <div class="section-header">
+    <div class="sec-label">§ 02 — Auto-Learning</div>
+    <div class="sec-title-wrap"><h2 class="sec-title">Gets <span>smarter</span><br/>every correction</h2></div>
+  </div>
+  <div class="loop-section">
+    <div class="loop-left">
+      <div class="loop-step"><div class="loop-step-num">1</div><div class="loop-step-text">Agent answers a ticket with a confidence score attached</div></div>
+      <div class="loop-step"><div class="loop-step-num">2</div><div class="loop-step-text">Human reviewer marks it correct or wrong — adds a note if wrong</div></div>
+      <div class="loop-step"><div class="loop-step-num">3</div><div class="loop-step-text">Correction stored and injected as a few-shot example on future similar tickets</div></div>
+      <div class="loop-step"><div class="loop-step-num">4</div><div class="loop-step-text">Accuracy improves visibly over time — no retraining, no fine-tuning</div></div>
+      <p class="loop-desc">Mirrors RLHF at a systems level — without touching model weights. Pure prompt engineering at production scale.</p>
+    </div>
+    <div class="loop-right">
+      <div class="loop-diagram">
+        <div class="loop-ring"></div><div class="loop-ring"></div><div class="loop-ring"></div>
+        <div class="loop-nodes">
+          <div class="loop-node">📩</div><div class="loop-node">🔀</div>
+          <div class="loop-node">✅</div><div class="loop-node">🧠</div>
+        </div>
+        <div class="loop-center">↺</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- LIVE DEMO -->
+<section class="section" id="demo-section">
+  <div class="demo-banner">
+    <div class="demo-banner-label">⚡ Live Demo</div>
+    <div class="demo-banner-text">Running on <strong>NovaPay</strong> — a fictional payments company with self-curated support docs. Real AI. Real responses.</div>
+    <div class="demo-banner-sub"><strong>Want this for your business?</strong> We replace NovaPay docs with your knowledge base. Contact: <strong>hello@loopdesk.ai</strong></div>
+  </div>
+  <div class="section-header">
+    <div class="sec-label">§ 03 — Live Demo</div>
+    <div class="sec-title-wrap"><h2 class="sec-title">Try it<br/><span>right now</span></h2></div>
+  </div>
+  <div class="demo-tabs">
+    <button class="demo-tab active" onclick="switchTab(event,'customer')">🎫 Customer</button>
+    <button class="demo-tab" onclick="switchTab(event,'reviewer')">🔍 Reviewer Dashboard</button>
+  </div>
+  <div class="demo-layout">
+    <div class="demo-left">
+      <div class="tab-panel active" id="tab-customer">
+        <div class="demo-field-label">Describe your issue</div>
+        <textarea class="demo-textarea" id="ticketInput" placeholder="e.g. I was charged twice this month..."></textarea>
+        <button class="demo-submit" id="submitBtn" onclick="submitTicket()">
+          <span id="submitLabel">Submit Ticket →</span>
+          <span class="spinner" id="submitSpinner" style="display:none"></span>
+        </button>
+        <div class="warming-notice" id="warmingNotice">First request may take up to 60 seconds — server warming up.</div>
+        <div class="demo-examples">
+          <div class="demo-examples-label">Try an example</div>
+          <span class="demo-example-chip" onclick="setExample('I was charged twice this month')">Double charge</span>
+          <span class="demo-example-chip" onclick="setExample('My API keeps returning a 502 error')">502 error</span>
+          <span class="demo-example-chip" onclick="setExample('How do I export my data?')">Export data</span>
+          <span class="demo-example-chip" onclick="setExample('My webhook is not receiving events')">Webhook issue</span>
+          <span class="demo-example-chip" onclick="setExample('How do I enable two factor authentication?')">Enable 2FA</span>
+          <span class="demo-example-chip" onclick="setExample('I want to cancel my subscription')">Cancel subscription</span>
+        </div>
+      </div>
+      <div class="tab-panel" id="tab-reviewer">
+        <div class="demo-field-label" style="margin-bottom:16px">Review agent decisions. Correct mistakes to improve accuracy.</div>
+        <div id="reviewerTickets">
+          <div class="reviewer-empty">
+            <div class="demo-result-empty-icon">🔍</div>
+            <div class="demo-result-empty-text">No tickets yet — submit one in the Customer tab</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="demo-right">
+      <div class="demo-field-label">Agent Response</div>
+      <div class="demo-result-empty" id="resultEmpty">
+        <div class="demo-result-empty-icon">↺</div>
+        <div class="demo-result-empty-text">Waiting for a ticket...</div>
+      </div>
+      <div class="demo-result" id="resultCard">
+        <div class="result-row"><div class="result-key">Category</div><div class="result-val category" id="resCategory">—</div></div>
+        <div class="result-row">
+          <div class="result-key">Confidence</div>
+          <div class="result-val" id="resConfidence">
+            <span id="resConfidenceText">—</span>
+            <div class="confidence-bar-wrap"><div class="confidence-bar-bg"><div class="confidence-bar-fill" id="confBar"></div></div></div>
+          </div>
+        </div>
+        <div class="result-row"><div class="result-key">Status</div><div class="result-val" id="resStatus">—</div></div>
+        <div class="result-row"><div class="result-key">Response</div><div class="result-val" id="resResponse" style="white-space:pre-wrap;max-height:280px;overflow-y:auto">—</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="section">
+  <div class="section-header">
+    <div class="sec-label">§ 04 — Features</div>
+    <div class="sec-title-wrap"><h2 class="sec-title">Built for <span>production</span>,<br/>not demos</h2></div>
+  </div>
+  <div class="bento">
+    <div class="bento-cell span2"><div class="bento-num">F-01</div><div class="bento-icon">🔀</div><div class="bento-title">LangGraph Routing</div><div class="bento-desc">Multi-node state machine with conditional routing. Each specialist has isolated RAG context and toolset.</div><div class="bento-accent-line"></div></div>
+    <div class="bento-cell span2"><div class="bento-num">F-02</div><div class="bento-icon">📚</div><div class="bento-title">RAG over Docs</div><div class="bento-desc">Answers grounded in your docs via ChromaDB. No hallucinations — only what you define as ground truth.</div><div class="bento-accent-line"></div></div>
+    <div class="bento-cell span2"><div class="bento-num">F-03</div><div class="bento-icon">🔁</div><div class="bento-title">Auto-Learning Loop</div><div class="bento-desc">Every correction feeds back as a few-shot example. No retraining. Just smarter prompts.</div><div class="bento-accent-line"></div></div>
+    <div class="bento-cell span3"><div class="bento-num">F-04</div><div class="bento-icon">🎯</div><div class="bento-title">Confidence Scoring</div><div class="bento-desc">Knows when it doesn't know. Sub-threshold confidence triggers graceful escalation with a pre-written context summary for the human reviewer.</div><div class="bento-accent-line"></div></div>
+    <div class="bento-cell span3"><div class="bento-num">F-05 / F-06</div><div class="bento-icon">👁 📊</div><div class="bento-title">LangSmith + Reviewer Dashboard</div><div class="bento-desc">Full trace of every decision — chunks retrieved, routing reason, token cost. One-click reviewer dashboard. Deploy in minutes.</div><div class="bento-accent-line"></div></div>
+  </div>
+</section>
+
+<!-- STACK -->
+<section class="section">
+  <div class="section-header">
+    <div class="sec-label">§ 05 — Stack</div>
+    <div class="sec-title-wrap"><h2 class="sec-title">The <span>stack</span></h2></div>
+  </div>
+  <div class="stack-strip">
+    <div class="stack-item"><div class="stack-name">LangGraph</div><div class="stack-role">Agent Orchestration</div></div>
+    <div class="stack-item"><div class="stack-name">LangChain</div><div class="stack-role">RAG + Prompting</div></div>
+    <div class="stack-item"><div class="stack-name">ChromaDB</div><div class="stack-role">Vector Store</div></div>
+    <div class="stack-item"><div class="stack-name">Claude 4.6</div><div class="stack-role">Specialist Agents</div></div>
+    <div class="stack-item"><div class="stack-name">LangSmith</div><div class="stack-role">Observability</div></div>
+    <div class="stack-item"><div class="stack-name">Render</div><div class="stack-role">API Deployment</div></div>
+  </div>
+</section>
+
+<!-- QUOTE -->
+<section class="section quote-section">
+  <div class="quote-side"><div class="quote-mark">"</div></div>
+  <div class="quote-body">
+    <p class="quote-text">The gap between a demo that impresses stakeholders and a system that handles <strong>real workload</strong> is exactly what LoopDesk is built to close.</p>
+    <div class="quote-attr">LoopDesk — Self-improving AI triage, 2026</div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="section cta-section">
+  <div class="cta-left">
+    <h2 class="cta-h2">Ready to<br/><span>close</span><br/>the loop?</h2>
+    <div style="font-size:0.65rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted)">Open Source · MIT License</div>
+  </div>
+  <div class="cta-right">
+    <p class="cta-desc">Built with LangChain, LangGraph, ChromaDB, and Claude Sonnet 4.6. Fully open source. Replace our docs with yours and deploy in minutes.</p>
+    <button class="btn-brutal filled" style="align-self:flex-start" onclick="window.open('https://github.com/gitshiven/LoopDesk','_blank')">View on GitHub →</button>
+    <button class="btn-brutal" style="align-self:flex-start" onclick="document.getElementById('demo-section').scrollIntoView({behavior:'smooth'})">Try Live Demo</button>
+  </div>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-cell"><div class="footer-logo">LoopDesk</div><div>AI Support Triage · Open Source</div></div>
+  <div class="footer-cell" style="text-align:center">LangChain · LangGraph · ChromaDB · Claude Sonnet 4.6 · Render</div>
+  <div class="footer-cell"><div>© 2026 LoopDesk</div><div style="margin-top:4px">MIT License</div></div>
+</footer>
+
+</div><!-- end #main -->
+
+<script>
+const API = 'https://loopdesk-pl8q.onrender.com';
+let tickets = [], ticketCount = 0;
+
+// ── INTRO ──
+const introEl = document.getElementById('intro');
+const mainEl  = document.getElementById('main');
+const video   = document.getElementById('intro-video');
+
+function revealMain() {
+  introEl.classList.add('fade-out');
+  mainEl.classList.add('show');
+  setTimeout(() => introEl.style.display = 'none', 1400);
+  // start terminal after reveal
+  document.querySelectorAll('.tl').forEach((l,i) => setTimeout(()=>l.classList.add('on'), 400+i*280));
+}
+
+video.addEventListener('ended', revealMain);
+// fallback — if video fails or takes too long
+setTimeout(revealMain, 8000);
+
+function skipIntro() { video.pause(); revealMain(); }
+
+// ── CURSOR ──
+const dot = document.getElementById('curDot');
+const cross = document.getElementById('curCross');
+let mx=0,my=0,cx=0,cy=0;
+document.addEventListener('mousemove', e => { mx=e.clientX; my=e.clientY; dot.style.left=mx+'px'; dot.style.top=my+'px'; });
+(function lag(){ cx+=(mx-cx)*0.1; cy+=(my-cy)*0.1; cross.style.left=cx+'px'; cross.style.top=cy+'px'; requestAnimationFrame(lag); })();
+
+// ── SCROLL REVEAL ──
+const obs = new IntersectionObserver(entries => {
+  entries.forEach(e => { if(e.isIntersecting) e.target.classList.add('vis'); });
+}, { threshold: 0.08 });
+document.querySelectorAll('.section').forEach(s => obs.observe(s));
+
+// ── TABS ──
+function switchTab(e, tab) {
+  document.querySelectorAll('.demo-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  e.target.classList.add('active');
+  document.getElementById('tab-'+tab).classList.add('active');
+}
+
+// ── DEMO ──
+function setExample(text) {
+  document.getElementById('ticketInput').value = text;
+  document.querySelectorAll('.demo-tab')[0].click();
+}
+
+async function submitTicket() {
+  const msg = document.getElementById('ticketInput').value.trim();
+  if (!msg) return;
+  const btn = document.getElementById('submitBtn');
+  const label = document.getElementById('submitLabel');
+  const spinner = document.getElementById('submitSpinner');
+  const warming = document.getElementById('warmingNotice');
+  btn.disabled = true; label.style.display='none'; spinner.style.display='block';
+  const warmTimer = setTimeout(()=>warming.classList.add('show'), 5000);
+  document.getElementById('resultEmpty').style.display='none';
+  document.getElementById('resultCard').classList.remove('show');
+  try {
+    const res = await fetch(`${API}/webhook/ticket`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({message:msg, source:'landing-page'})
+    });
+    clearTimeout(warmTimer); warming.classList.remove('show');
+    if(!res.ok) throw new Error();
+    const data = await res.json();
+    ticketCount++; tickets.unshift({id:ticketCount,...data});
+    showResult(data); updateReviewer();
+  } catch(err) {
+    clearTimeout(warmTimer); warming.classList.remove('show');
+    document.getElementById('resultEmpty').style.display='flex';
+    document.getElementById('resultEmpty').querySelector('.demo-result-empty-text').textContent='Error — API may be sleeping. Try again in 30s.';
+  }
+  btn.disabled=false; label.style.display='inline'; spinner.style.display='none';
+}
+
+function showResult(data) {
+  document.getElementById('resultCard').classList.add('show');
+  const catEl = document.getElementById('resCategory');
+  catEl.textContent = data.category.toUpperCase();
+  catEl.className = 'result-val category ' + data.category;
+  const conf = Math.round(data.confidence*100);
+  document.getElementById('resConfidenceText').textContent = conf+'%';
+  setTimeout(()=>{ document.getElementById('confBar').style.width=conf+'%'; },100);
+  const statusEl = document.getElementById('resStatus');
+  if(data.escalated){ statusEl.textContent='⚠ ESCALATED — Human review required'; statusEl.className='result-val escalated-val'; }
+  else { statusEl.textContent='✅ AUTO-RESOLVED'; statusEl.className='result-val resolved-val'; }
+  document.getElementById('resResponse').textContent = data.escalated ? data.escalation_summary : data.response;
+}
+
+function updateReviewer() {
+  const container = document.getElementById('reviewerTickets');
+  container.innerHTML='';
+  tickets.forEach((t,idx)=>{
+    const card = document.createElement('div');
+    card.className='ticket-review-card';
+    const bc = t.escalated?'escalated':t.category;
+    const bt = t.escalated?'⚠ ESCALATED':t.category.toUpperCase();
+    card.innerHTML=`
+      <div class="trc-header"><span class="trc-id">Ticket #${t.id}</span><span class="trc-badge ${bc}">${bt}</span></div>
+      <div class="trc-message">"${t.message}"</div>
+      <div class="trc-response">${t.response.substring(0,120)}${t.response.length>120?'...':''}</div>
+      <div class="trc-actions">
+        <button class="trc-btn correct" onclick="markCorrect(${idx})">✅ Correct</button>
+        <button class="trc-btn wrong" onclick="toggleCorrection(${idx})">❌ Wrong</button>
+        <span id="feedback-${idx}" style="font-size:0.65rem;color:#34d399;display:none">Saved ✓</span>
+      </div>
+      <div class="trc-correction-form" id="correction-${idx}">
+        <div class="demo-field-label" style="margin-bottom:8px">Correct category</div>
+        <select class="trc-select" id="cat-${idx}"><option value="billing">Billing</option><option value="technical">Technical</option><option value="general">General</option></select>
+        <input class="trc-input" id="note-${idx}" placeholder="Note (optional)"/>
+        <button class="trc-save" onclick="saveCorrection(${idx})">Save Correction</button>
+      </div>`;
+    container.appendChild(card);
+  });
+}
+
+function markCorrect(idx){ document.getElementById(`feedback-${idx}`).style.display='inline'; document.getElementById(`feedback-${idx}`).textContent='Marked correct ✓'; }
+function toggleCorrection(idx){ document.getElementById(`correction-${idx}`).classList.toggle('show'); }
+function saveCorrection(idx){
+  const t=tickets[idx];
+  const cc=document.getElementById(`cat-${idx}`).value;
+  document.getElementById(`correction-${idx}`).classList.remove('show');
+  const fb=document.getElementById(`feedback-${idx}`);
+  fb.style.display='inline'; fb.textContent=`Corrected: ${t.category} → ${cc} ✓`; fb.style.color='#fbbf24';
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  document.getElementById('ticketInput').addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.ctrlKey) submitTicket(); });
+});
+</script>
+</body>
+</html>
