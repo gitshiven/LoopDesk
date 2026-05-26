@@ -41,46 +41,40 @@ body::after { content: ''; position: fixed; inset: 0; pointer-events: none; z-in
   position: fixed; inset: 0; z-index: 500;
   background: #0a0a0a;
   display: flex; flex-direction: column;
-  align-items: flex-start; justify-content: center;
-  padding: 60px 48px;
+  align-items: center; justify-content: center;
+  padding: 60px 48px; text-align: center;
   transition: opacity 1.2s ease;
 }
 #intro.fade-out { opacity: 0; pointer-events: none; }
-.hero-line { display: block; overflow: hidden; line-height: 0.95; }
-.hero-line span {
-  display: inline-block;
-  transform: translateY(110%); opacity: 0;
-  transition: transform 0.55s cubic-bezier(0.16,1,0.3,1), opacity 0.55s ease;
-  font-size: clamp(3.5rem, 10vw, 7.5rem);
+#typing-line {
+  font-size: clamp(2.5rem, 7vw, 6rem);
   font-weight: 700; letter-spacing: -0.03em;
-  text-transform: uppercase; color: #f2efe8; padding-bottom: 4px;
+  text-transform: uppercase; color: #f2efe8;
+  min-height: 1.1em; line-height: 1;
 }
-.hero-line span.show { transform: translateY(0); opacity: 1; }
-.line-loop span { color: transparent; -webkit-text-stroke: 2px #ff3c00; font-style: italic; }
-.line-loop span.show.filled { color: #ff3c00; -webkit-text-stroke: 0; }
+#loop-word { color: #ff3c00; font-style: italic; }
 #intro-cursor {
   display: inline-block; width: 4px; height: 0.75em;
-  background: #ff3c00; margin-left: 3px; vertical-align: middle; opacity: 0;
+  background: #ff3c00; margin-left: 3px;
+  vertical-align: middle;
+  animation: introBlink 0.9s step-end infinite;
 }
-#intro-cursor.show { opacity: 1; animation: introBlink 0.9s step-end infinite; }
 @keyframes introBlink { 0%,100%{opacity:1} 50%{opacity:0} }
-#intro-divider {
-  width: 0; height: 1px; background: #2a2a2a;
-  margin: 32px 0 0; transition: width 1.2s cubic-bezier(0.16,1,0.3,1);
-}
-#intro-divider.show { width: 100%; }
-#intro-logo {
-  display: flex; align-items: center; margin-top: 28px;
-  opacity: 0; transform: translateY(12px);
+#intro-bottom {
+  margin-top: 40px; opacity: 0; transform: translateY(10px);
   transition: opacity 0.7s ease, transform 0.7s ease;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
 }
-#intro-logo.show { opacity: 1; transform: translateY(0); }
-#intro-logo img { height: 56px; width: auto; display: block; }
+#intro-bottom.show { opacity: 1; transform: translateY(0); }
+#intro-wordmark {
+  font-size: 1.1rem; font-weight: 700;
+  letter-spacing: 0.1em; text-transform: uppercase; color: #f2efe8;
+}
 #intro-tagline {
-  font-size: 0.65rem; letter-spacing: 0.22em; text-transform: uppercase;
-  color: #333; margin-top: 12px; opacity: 0; transition: opacity 0.8s ease;
+  font-size: 0.65rem; letter-spacing: 0.22em;
+  text-transform: uppercase; color: #444;
 }
-#intro-tagline.show { opacity: 1; }
+#intro-divider { width: 40px; height: 1px; background: #2a2a2a; margin: 0 auto 6px; }
 .skip-btn {
   position: absolute; bottom: 32px; right: 32px;
   font-family: 'Ubuntu', sans-serif;
@@ -310,14 +304,14 @@ footer { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: var(--ru
 
 <!-- INTRO -->
 <div id="intro">
-  <div class="hero-line"><span id="w-close">Close</span></div>
-  <div class="hero-line"><span id="w-the">The</span></div>
-  <div class="hero-line line-loop"><span id="w-loop">Loop.<span id="intro-cursor"></span></span></div>
-  <div id="intro-divider"></div>
-  <div id="intro-logo">
-    <img src="static/logo.png" alt="LoopDesk"/>
+  <div id="typing-line">
+    <span id="typed"></span><span id="intro-cursor"></span>
   </div>
-  <div id="intro-tagline">Resolving tickets, intelligently.</div>
+  <div id="intro-bottom">
+    <div id="intro-divider"></div>
+    <div id="intro-wordmark">LoopDesk</div>
+    <div id="intro-tagline">Resolving tickets, intelligently.</div>
+  </div>
   <button class="skip-btn" onclick="skipIntro()">Skip →</button>
 </div>
 
@@ -611,35 +605,36 @@ function revealMain() {
 function skipIntro() { revealMain(); }
 
 async function runIntro() {
-  const wClose  = document.getElementById('w-close');
-  const wThe    = document.getElementById('w-the');
-  const wLoop   = document.getElementById('w-loop');
+  const typedEl = document.getElementById('typed');
   const cursor  = document.getElementById('intro-cursor');
-  const divider = document.getElementById('intro-divider');
-  const logo    = document.getElementById('intro-logo');
-  const tag     = document.getElementById('intro-tagline');
-
+  const bottom  = document.getElementById('intro-bottom');
+  const phrase  = 'Close the Loop.';
   const d = ms => new Promise(r => setTimeout(r, ms));
 
-  await d(400);
-  wClose.classList.add('show');
-  await d(200);
-  wThe.classList.add('show');
-  await d(200);
-  wLoop.classList.add('show');
-  cursor.classList.add('show');
-  await d(700);
-  wLoop.classList.add('filled');
-  await d(400);
+  function renderTyped(text) {
+    const loopStart = text.indexOf('Loop');
+    if (loopStart === -1) {
+      typedEl.innerHTML = text;
+    } else {
+      typedEl.innerHTML = text.substring(0, loopStart) +
+        '<span id="loop-word">' + text.substring(loopStart) + '</span>';
+    }
+  }
+
+  await d(500);
+  let i = 0;
+  while (i < phrase.length) {
+    i++;
+    renderTyped(phrase.substring(0, i));
+    const ch = phrase[i-1];
+    await d(ch === ' ' ? 60 : ch === '.' ? 120 : Math.random() * 55 + 35);
+  }
+  await d(500);
   cursor.style.animation = 'none';
   cursor.style.opacity = '0';
   await d(200);
-  divider.classList.add('show');
-  await d(400);
-  logo.classList.add('show');
-  await d(200);
-  tag.classList.add('show');
-  await d(1200);
+  bottom.classList.add('show');
+  await d(1800);
   revealMain();
 }
 
