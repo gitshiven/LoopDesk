@@ -1,0 +1,19 @@
+NOVAPAY TECHNICAL FAQ
+
+1. API RATE LIMITS
+The NovaPay API allows 100 requests per minute per API key. Exceeding this returns a 429 error. Use exponential backoff for retries.
+
+2. 502 BAD GATEWAY
+502 errors indicate temporary server overload. Wait 60 seconds and retry. If the issue persists for more than 10 minutes, check status.novapay.io.
+
+3. WEBHOOKS
+Webhooks require a valid HTTPS endpoint. NovaPay retries failed webhook deliveries 5 times over 24 hours. Webhook signatures should be verified using the secret key in your dashboard.
+
+4. FILE UPLOADS
+Supported formats: PNG, JPG, PDF. Maximum file size is 10MB. Files larger than 10MB return a 413 error.
+
+5. AUTHENTICATION
+All API requests require a Bearer token in the Authorization header. Tokens expire after 24 hours. Refresh tokens are valid for 30 days.
+
+6. SDK SUPPORT
+Official SDKs available for Python, Node.js, and Ruby. Community SDKs available for PHP and Go. SDK documentation at docs.novapay.io.

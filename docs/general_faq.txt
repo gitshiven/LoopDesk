@@ -1,0 +1,21 @@
+NOVAPAY GENERAL FAQ
+
+1. SUPPORT HOURS
+NovaPay support is available Monday to Friday, 9am to 6pm GMT. Emergency technical support is available 24/7 for Enterprise customers.
+
+2. ACCOUNT DELETION
+Account deletion requests take 30 days to process. All data is permanently deleted after 30 days. Deletion can be requested in Settings > Account > Delete Account.
+
+3. PASSWORD RESET
+Password resets are done via email only. Click Forgot Password on the login page. Reset links expire after 1 hour.
+
+4. TWO-FACTOR AUTHENTICATION
+2FA is available via authenticator app (Google Authenticator, Authy) or SMS. 2FA can be enabled in Settings > Security.
+
+5. DATA EXPORT
+Customers can export all their data in CSV or JSON format from Settings > Account > Export Data. Exports are ready within 24 hours.
+
+6. CONTACT
+General enquiries: hello@novapay.io
+Billing: billing@novapay.io
+Technical: tech@novapay.io

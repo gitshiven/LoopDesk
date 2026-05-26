@@ -1,0 +1,19 @@
+NOVAPAY BILLING FAQ
+
+1. DOUBLE CHARGES
+If a customer is charged twice for the same transaction, a full refund is issued automatically within 3-5 business days. Customers should email billing@novapay.io with their transaction ID.
+
+2. REFUND POLICY
+Refunds are eligible if requested within 30 days of the original charge. Crypto payments are non-refundable. Refunds are returned to the original payment method only.
+
+3. FAILED PAYMENTS
+Failed payments are retried automatically 3 times over 7 days. If all retries fail, the account is suspended. Customers can update their payment method in Settings > Billing.
+
+4. SUBSCRIPTIONS
+Subscriptions renew on the 1st of each month. Cancellations must be made 48 hours before renewal to avoid being charged for the next cycle.
+
+5. INVOICES
+Invoices are emailed automatically on the day of each charge. Past invoices are available in Settings > Billing > Invoice History.
+
+6. VAT
+VAT is applied to all EU customers at the applicable local rate. VAT numbers can be added in Settings > Billing > Tax Information.
