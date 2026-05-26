@@ -54,7 +54,7 @@ st.markdown("""
         💼 <strong style="color:#f2efe8">Want this for your business?</strong> 
         We replace the NovaPay documents with your company's knowledge base — your policies, 
         your FAQs, your tone. The agent learns your business in minutes.
-        <br/>Contact: <span style="color:#ff3c00">hello@loopdesk.ai</span>
+        <br/>Contact: <span style="color:#ff3c00">ss.shiven44@gmail.com</span>
     </div>
 </div>
 """, unsafe_allow_html=True)
