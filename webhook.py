@@ -17,26 +17,31 @@ CORS(app, origins="*", supports_credentials=False)
 
 @app.route("/webhook/ticket", methods=["POST"])
 def receive_ticket():
-    data = request.get_json()
-    if not data or "message" not in data:
-        return jsonify({"error": "No message provided"}), 400
+    try:
+        data = request.get_json()
+        if not data or "message" not in data:
+            return jsonify({"error": "No message provided"}), 400
 
-    message = data["message"]
-    source = data.get("source", "unknown")
+        message = data["message"]
+        source = data.get("source", "unknown")
+        print(f"Ticket received from {source}: {message}")
 
-    print(f"Ticket received from {source}: {message}")
+        result = run_ticket(message)
 
-    result = run_ticket(message)
-
-    return jsonify({
-        "source": source,
-        "message": message,
-        "category": result["category"],
-        "confidence": result["confidence"],
-        "escalated": result["escalated"],
-        "response": result["response"],
-        "escalation_summary": result.get("escalation_summary", "")
-    })
+        return jsonify({
+            "source": source,
+            "message": message,
+            "category": result["category"],
+            "confidence": result["confidence"],
+            "escalated": result["escalated"],
+            "response": result["response"],
+            "escalation_summary": result.get("escalation_summary", "")
+        })
+    except Exception as e:
+        print(f"ERROR: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({"error": str(e)}), 500
 
 @app.route("/health", methods=["GET"])
 def health():
