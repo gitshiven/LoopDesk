@@ -9,6 +9,7 @@ if not os.path.exists("chroma_db"):
     build_vectorstore()
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 from agent.graph import run_ticket
 
 app = Flask(__name__)
