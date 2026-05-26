@@ -13,7 +13,7 @@ from flask_cors import CORS
 from agent.graph import run_ticket
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins="*", supports_credentials=False)
 
 @app.route("/webhook/ticket", methods=["POST"])
 def receive_ticket():
