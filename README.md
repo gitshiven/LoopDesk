@@ -8,7 +8,7 @@
 
 ---
 
-![Intro](static/intro.png)
+![Intro](static/screenshots/intro.png)
 
 ---
 
@@ -18,7 +18,7 @@ LoopDesk is a production-grade multi-agent support triage system. It classifies,
 
 ---
 
-![Demo](static/demo.png)
+![Demo](static/screenshots/demo.png)
 
 Submit any support ticket. The agent classifies it, searches the relevant documentation, scores its own confidence, and either resolves it automatically or escalates to a human reviewer with a pre-written context summary.
 
