@@ -175,7 +175,7 @@ nav { position: fixed; top: 0; left: 0; right: 0; z-index: 200; display: grid; g
 .bento-cell:nth-child(6n) { border-right: none; }
 .bento-cell.span2 { grid-column: span 2; } .bento-cell.span3 { grid-column: span 3; }
 .bento-num { font-size: 0.58rem; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); margin-bottom: 20px; }
-.bento-icon { font-size: 1.5rem; margin-bottom: 14px; }
+.bento-icon { font-size: 1.5rem; margin-bottom: 14px; font-family: 'Ubuntu', sans-serif; font-weight: 700; color: var(--accent); letter-spacing: -0.02em; }
 .bento-title { font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 8px; }
 .bento-desc { font-size: 0.72rem; color: var(--muted); line-height: 1.65; }
 .bento-accent-line { position: absolute; bottom: 0; left: 0; height: 2px; width: 0; background: var(--accent); transition: width 0.4s ease; }
@@ -411,19 +411,19 @@ footer { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: var(--ru
   </div>
   <div class="how-grid">
     <div class="how-card" data-n="1">
-      <span class="how-icon">📩</span>
+      <span class="how-icon">01 →</span>
       <div class="how-title">Ticket Arrives</div>
       <div class="how-desc">Customer submits a support message in plain language. No categories, no forms. Just words.</div>
       <span class="how-tag active">Input Layer</span>
     </div>
     <div class="how-card" data-n="2">
-      <span class="how-icon">🔀</span>
+      <span class="how-icon">02 →</span>
       <div class="how-title">Classify & Route</div>
       <div class="how-desc">LangGraph classifier node reads intent, routes to the correct specialist agent — Billing, Technical, or General.</div>
       <span class="how-tag">LangGraph Node</span>
     </div>
     <div class="how-card" data-n="3">
-      <span class="how-icon">✅</span>
+      <span class="how-icon">03 →</span>
       <div class="how-title">Resolve or Escalate</div>
       <div class="how-desc">High confidence → answer sent automatically. Low confidence → human gets a pre-written handoff summary.</div>
       <span class="how-tag">Output Layer</span>
@@ -449,8 +449,8 @@ footer { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: var(--ru
       <div class="loop-diagram">
         <div class="loop-ring"></div><div class="loop-ring"></div><div class="loop-ring"></div>
         <div class="loop-nodes">
-          <div class="loop-node">📩</div><div class="loop-node">🔀</div>
-          <div class="loop-node">✅</div><div class="loop-node">🧠</div>
+          <div class="loop-node">IN</div><div class="loop-node">→</div>
+          <div class="loop-node">OUT</div><div class="loop-node">AI</div>
         </div>
         <div class="loop-center">↺</div>
       </div>
@@ -461,7 +461,7 @@ footer { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: var(--ru
 <!-- LIVE DEMO -->
 <section class="section" id="demo-section">
   <div class="demo-banner">
-    <div class="demo-banner-label">⚡ Live Demo</div>
+    <div class="demo-banner-label">// Live Demo</div>
     <div class="demo-banner-text">Running on <strong>NovaPay</strong> — a fictional payments company with self-curated support docs. Real AI. Real responses.</div>
     <div class="demo-banner-sub"><strong>Want this for your business?</strong> We replace NovaPay docs with your knowledge base. Contact: <strong>hello@loopdesk.ai</strong></div>
   </div>
@@ -470,8 +470,8 @@ footer { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: var(--ru
     <div class="sec-title-wrap"><h2 class="sec-title">Try it<br/><span>right now</span></h2></div>
   </div>
   <div class="demo-tabs">
-    <button class="demo-tab active" onclick="switchTab(event,'customer')">🎫 Customer</button>
-    <button class="demo-tab" onclick="switchTab(event,'reviewer')">🔍 Reviewer Dashboard</button>
+    <button class="demo-tab active" onclick="switchTab(event,'customer')">Customer</button>
+    <button class="demo-tab" onclick="switchTab(event,'reviewer')">Reviewer Dashboard</button>
   </div>
   <div class="demo-layout">
     <div class="demo-left">
@@ -497,7 +497,7 @@ footer { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: var(--ru
         <div class="demo-field-label" style="margin-bottom:16px">Review agent decisions. Correct mistakes to improve accuracy.</div>
         <div id="reviewerTickets">
           <div class="reviewer-empty">
-            <div class="demo-result-empty-icon">🔍</div>
+            <div class="demo-result-empty-icon">—</div>
             <div class="demo-result-empty-text">No tickets yet — submit one in the Customer tab</div>
           </div>
         </div>
@@ -532,11 +532,11 @@ footer { display: grid; grid-template-columns: 1fr 1fr 1fr; border-top: var(--ru
     <div class="sec-title-wrap"><h2 class="sec-title">Built for <span>production</span>,<br/>not demos</h2></div>
   </div>
   <div class="bento">
-    <div class="bento-cell span2"><div class="bento-num">F-01</div><div class="bento-icon">🔀</div><div class="bento-title">LangGraph Routing</div><div class="bento-desc">Multi-node state machine with conditional routing. Each specialist has isolated RAG context and toolset.</div><div class="bento-accent-line"></div></div>
-    <div class="bento-cell span2"><div class="bento-num">F-02</div><div class="bento-icon">📚</div><div class="bento-title">RAG over Docs</div><div class="bento-desc">Answers grounded in your docs via ChromaDB. No hallucinations — only what you define as ground truth.</div><div class="bento-accent-line"></div></div>
-    <div class="bento-cell span2"><div class="bento-num">F-03</div><div class="bento-icon">🔁</div><div class="bento-title">Auto-Learning Loop</div><div class="bento-desc">Every correction feeds back as a few-shot example. No retraining. Just smarter prompts.</div><div class="bento-accent-line"></div></div>
-    <div class="bento-cell span3"><div class="bento-num">F-04</div><div class="bento-icon">🎯</div><div class="bento-title">Confidence Scoring</div><div class="bento-desc">Knows when it doesn't know. Sub-threshold confidence triggers graceful escalation with a pre-written context summary for the human reviewer.</div><div class="bento-accent-line"></div></div>
-    <div class="bento-cell span3"><div class="bento-num">F-05 / F-06</div><div class="bento-icon">👁 📊</div><div class="bento-title">LangSmith + Reviewer Dashboard</div><div class="bento-desc">Full trace of every decision — chunks retrieved, routing reason, token cost. One-click reviewer dashboard. Deploy in minutes.</div><div class="bento-accent-line"></div></div>
+    <div class="bento-cell span2"><div class="bento-num">F-01</div><div class="bento-icon">↗</div><div class="bento-title">LangGraph Routing</div><div class="bento-desc">Multi-node state machine with conditional routing. Each specialist has isolated RAG context and toolset.</div><div class="bento-accent-line"></div></div>
+    <div class="bento-cell span2"><div class="bento-num">F-02</div><div class="bento-icon">◈</div><div class="bento-title">RAG over Docs</div><div class="bento-desc">Answers grounded in your docs via ChromaDB. No hallucinations — only what you define as ground truth.</div><div class="bento-accent-line"></div></div>
+    <div class="bento-cell span2"><div class="bento-num">F-03</div><div class="bento-icon">↺</div><div class="bento-title">Auto-Learning Loop</div><div class="bento-desc">Every correction feeds back as a few-shot example. No retraining. Just smarter prompts.</div><div class="bento-accent-line"></div></div>
+    <div class="bento-cell span3"><div class="bento-num">F-04</div><div class="bento-icon">◎</div><div class="bento-title">Confidence Scoring</div><div class="bento-desc">Knows when it doesn't know. Sub-threshold confidence triggers graceful escalation with a pre-written context summary for the human reviewer.</div><div class="bento-accent-line"></div></div>
+    <div class="bento-cell span3"><div class="bento-num">F-05 / F-06</div><div class="bento-icon">▣</div><div class="bento-title">LangSmith + Reviewer Dashboard</div><div class="bento-desc">Full trace of every decision — chunks retrieved, routing reason, token cost. One-click reviewer dashboard. Deploy in minutes.</div><div class="bento-accent-line"></div></div>
   </div>
 </section>
 
