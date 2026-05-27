@@ -31,7 +31,10 @@ def classify_ticket(message: str) -> dict:
     if corrections:
         corrections_text = "Learn from these past corrections:\n"
         for c in corrections:
-            corrections_text += f"- Message like '{c['message']}' should be classified as: {c['correct_category']}\n"
+            try:
+                corrections_text += f"- Message like '{c['message']}' should be classified as: {c['correct_category']}\n"
+            except KeyError:
+                continue
 
     prompt = ChatPromptTemplate.from_template(CLASSIFIER_PROMPT)
     chain = prompt | llm

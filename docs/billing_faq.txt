@@ -17,3 +17,9 @@ Invoices are emailed automatically on the day of each charge. Past invoices are 
 
 6. VAT
 VAT is applied to all EU customers at the applicable local rate. VAT numbers can be added in Settings > Billing > Tax Information.
+
+7. SUBSCRIPTION CANCELLATION
+To cancel your subscription go to Settings then Billing. Click Cancel Subscription. Cancellations must be made at least 48 hours before your next renewal date to avoid being charged for the next cycle. Subscriptions renew on the 1st of each month.
+
+8. UPDATING PAYMENT METHOD
+To update your payment method go to Settings then Billing then Payment Methods. Add a new card or bank account and set it as the default. Changes take effect immediately for future charges.

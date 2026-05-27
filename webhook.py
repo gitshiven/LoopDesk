@@ -1,8 +1,8 @@
 import os
+import re as _re
 from dotenv import load_dotenv
 load_dotenv()
 
-# Build vector store if it doesn't exist
 if not os.path.exists("chroma_db"):
     print("Building vector store...")
     from rag.retriever import build_vectorstore
@@ -15,6 +15,16 @@ from agent.graph import run_ticket
 app = Flask(__name__)
 CORS(app, origins="*", supports_credentials=False)
 
+VAGUE_MESSAGES = {'hello', 'hi', 'hey', 'help', 'can you help me', 
+                  'i have a problem', 'i need help', 'hello there', 'good morning'}
+
+def is_valid_message(msg):
+    if msg.strip().lower() in VAGUE_MESSAGES:
+        return False
+    words = msg.strip().split()
+    real_words = [w for w in words if _re.match(r'[a-zA-Z]{2,}', w)]
+    return len(real_words) >= 2
+
 @app.route("/webhook/ticket", methods=["POST"])
 def receive_ticket():
     try:
@@ -24,8 +34,19 @@ def receive_ticket():
 
         message = data["message"]
         source = data.get("source", "unknown")
-        print(f"Ticket received from {source}: {message}")
 
+        if not is_valid_message(message):
+            return jsonify({
+                "source": source,
+                "message": message,
+                "category": "invalid",
+                "confidence": 0.0,
+                "escalated": False,
+                "response": "Please describe your issue clearly so we can help you.",
+                "escalation_summary": ""
+            })
+
+        print(f"Ticket received from {source}: {message}")
         result = run_ticket(message)
 
         return jsonify({

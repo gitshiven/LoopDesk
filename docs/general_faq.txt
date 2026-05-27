@@ -19,3 +19,9 @@ Customers can export all their data in CSV or JSON format from Settings > Accoun
 General enquiries: hello@novapay.io
 Billing: billing@novapay.io
 Technical: tech@novapay.io
+
+7. TWO-FACTOR AUTHENTICATION SETUP
+To enable two-factor authentication on your NovaPay account go to Settings then Security. Choose your preferred 2FA method: authenticator app (Google Authenticator or Authy) or SMS. Follow the on-screen instructions to complete setup. 2FA is available to all NovaPay accounts.
+
+8. DATA EXPORT
+To export your data go to Settings then Account then Export Data. Choose your preferred format: CSV or JSON. Your export will be ready within 24 hours and you will receive an email notification when it is ready to download.

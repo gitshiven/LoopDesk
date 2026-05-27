@@ -17,3 +17,6 @@ All API requests require a Bearer token in the Authorization header. Tokens expi
 
 6. SDK SUPPORT
 Official SDKs available for Python, Node.js, and Ruby. Community SDKs available for PHP and Go. SDK documentation at docs.novapay.io.
+
+7. SUPPORTED FILE FORMATS
+NovaPay supports the following file upload formats: PNG, JPG, and PDF. Maximum file size is 10MB per upload. Files larger than 10MB will return a 413 error.
