@@ -1,3 +1,4 @@
+import re
 from dotenv import load_dotenv
 load_dotenv()
 
@@ -10,15 +11,26 @@ llm = ChatOpenAI(model="gpt-4o-mini", temperature=0)
 CLASSIFIER_PROMPT = """You are a support ticket classifier for NovaPay, a payments platform.
 
 Classify the following customer message into exactly one of these categories:
-- billing
-- technical
-- general
+
+BILLING — anything related to:
+payments, charges, double charges, refunds, invoices, subscriptions, cancellations,
+payment methods, credit cards, bank accounts, VAT, billing history, pricing
+
+TECHNICAL — anything related to:
+API errors, 502 errors, 429 errors, webhooks, authentication, API keys, tokens,
+rate limits, file uploads, file formats, SDKs, integrations, HTTP errors, code
+
+GENERAL — anything related to:
+account settings, password reset, two-factor authentication, 2FA, data export,
+support hours, account deletion, contact information, data privacy, general enquiries
 
 {corrections}
 
 Rules:
 - Reply with only one word: billing, technical, or general
 - No punctuation, no explanation
+- If unsure between billing and general, pick billing
+- If unsure between technical and general, pick general
 
 Customer message: {message}
 
@@ -45,7 +57,6 @@ def classify_ticket(message: str) -> dict:
     })
 
     category = result.content.strip().lower()
-
     if category not in ["billing", "technical", "general"]:
         category = "general"
 
